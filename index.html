@@ -320,7 +320,7 @@
 // PWA: Service Worker registrieren
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('./sw.js')
       .then(() => {
         document.getElementById('offlineBadge').classList.add('visible');
         setTimeout(() => document.getElementById('offlineBadge').classList.remove('visible'), 3000);

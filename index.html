@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sauerteig Zeitplaner</title>
+
+<!-- PWA Meta Tags für iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sauerteig">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#8B5E3C">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF7F2;
+    --paper: #FFFEF9;
+    --ink: #1A1208;
+    --warm: #8B5E3C;
+    --accent: #C4813A;
+    --light: #E8D5B7;
+    --pale: #F5ECD9;
+    --green: #4A7C59;
+    --green-pale: #D6EAD9;
+    --red: #B84444;
+    --red-pale: #F5DCDC;
+    --warn: #A0732A;
+    --warn-pale: #FFF0D0;
+    --night: #2C3E6B;
+    --night-pale: #E0E5F5;
+    --border: rgba(139,94,60,0.2);
+    --shadow: 0 4px 24px rgba(26,18,8,0.08);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: calc(var(--safe-top) + 1rem) 1rem calc(var(--safe-bottom) + 3rem);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap { max-width: 600px; margin: 0 auto; }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    padding: 1.5rem 0 1.2rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.2rem;
+  }
+  .loaf { font-size: 2.8rem; display: block; margin-bottom: 0.3rem;
+    animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem; color: var(--warm);
+    letter-spacing: -0.02em; line-height: 1.1;
+  }
+  .subtitle {
+    font-size: 0.72rem; color: #8B7355; margin-top: 0.3rem;
+    font-family: 'DM Mono', monospace; letter-spacing: 0.04em;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem; color: var(--warm);
+    margin-bottom: 1rem;
+  }
+  .divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+  /* INPUTS */
+  .field { margin-bottom: 0.8rem; }
+  .field label {
+    display: block;
+    font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #8B7355; font-family: 'DM Mono', monospace; margin-bottom: 0.35rem;
+  }
+  .field input[type="datetime-local"] {
+    width: 100%; padding: 0.7rem 0.9rem;
+    border: 1.5px solid var(--light); border-radius: 10px;
+    font-family: 'DM Mono', monospace; font-size: 1rem;
+    background: var(--pale); color: var(--ink);
+    -webkit-appearance: none; appearance: none;
+    outline: none; transition: border-color .2s;
+  }
+  .field input:focus { border-color: var(--accent); background: var(--paper); }
+
+  /* FLEX REST INPUTS */
+  .flex-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;
+    margin-bottom: 0.8rem;
+  }
+  .flex-group label {
+    font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #8B7355; font-family: 'DM Mono', monospace; display: block;
+    margin-bottom: 0.3rem;
+  }
+  .num-row { display: flex; gap: 0.3rem; align-items: center; }
+  .num-row input[type="number"] {
+    width: 52px; padding: 0.5rem 0.4rem;
+    border: 1.5px solid var(--light); border-radius: 8px;
+    font-family: 'DM Mono', monospace; font-size: 0.9rem;
+    background: var(--pale); color: var(--ink);
+    text-align: center; -webkit-appearance: none; outline: none;
+  }
+  .num-row input:focus { border-color: var(--accent); }
+  .dash { color: #bbb; font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+  .unit { font-size: 0.7rem; color: #8B7355; font-family: 'DM Mono', monospace; }
+
+  /* SUGGEST BOX */
+  .suggest-box {
+    background: var(--green-pale); border: 1.5px dashed var(--green);
+    border-radius: 8px; padding: 0.65rem 0.9rem;
+    font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--green);
+    display: none; margin-top: 0.6rem; line-height: 1.5;
+  }
+  .suggest-box.visible { display: block; }
+
+  /* GLOBAL WARNING */
+  .global-warn {
+    border-radius: 10px; padding: 0.75rem 1rem;
+    font-size: 0.8rem; font-family: 'DM Mono', monospace;
+    margin-bottom: 0.8rem; display: none; line-height: 1.5;
+  }
+  .global-warn.err { display: block; background: var(--red-pale);
+    border: 1px solid var(--red); color: var(--red); }
+  .global-warn.warn { display: block; background: var(--warn-pale);
+    border: 1px solid rgba(160,115,42,0.5); color: var(--warn); }
+
+  /* TIMELINE */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+
+  .step { display: grid; grid-template-columns: 2rem 1fr; gap: 0 0.7rem;
+    opacity: 0; animation: fadeUp 0.35s ease forwards; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(6px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .step-connector { display: flex; flex-direction: column; align-items: center; }
+  .step-dot {
+    width: 2rem; height: 2rem; border-radius: 50%;
+    background: var(--accent); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 0.7rem; font-weight: 500;
+    flex-shrink: 0;
+  }
+  .step-line { width: 2px; background: var(--light); flex: 1; min-height: 0.6rem; }
+  .step:last-child .step-line { display: none; }
+
+  .step-body {
+    background: var(--paper); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.45rem;
+  }
+  .step-header { display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 0.5rem; }
+  .step-name { font-family: 'Playfair Display', serif; font-size: 0.95rem; flex: 1; }
+  .step-time { font-family: 'DM Mono', monospace; font-size: 0.78rem;
+    color: var(--warm); white-space: nowrap; font-weight: 500; }
+  .step-meta { display: flex; gap: 0.4rem; margin-top: 0.45rem; flex-wrap: wrap; }
+
+  .tag {
+    font-size: 0.65rem; font-family: 'DM Mono', monospace;
+    padding: 0.18rem 0.5rem; border-radius: 20px;
+    background: var(--pale); color: #8B7355; border: 1px solid var(--border);
+  }
+  .tag.rest { background: var(--night-pale); color: var(--night);
+    border-color: rgba(44,62,107,0.2); }
+  .tag.flex { background: var(--warn-pale); color: var(--warn);
+    border-color: rgba(160,115,42,0.3); }
+
+  .badge {
+    font-size: 0.65rem; font-family: 'DM Mono', monospace;
+    padding: 0.18rem 0.5rem; border-radius: 20px; white-space: nowrap;
+  }
+  .badge.ok { background: var(--green-pale); color: var(--green); }
+  .badge.warn { background: var(--warn-pale); color: var(--warn); }
+  .badge.err { background: var(--red-pale); color: var(--red); }
+
+  .rest-bar { margin-top: 0.5rem; height: 3px; border-radius: 2px;
+    background: var(--light); overflow: hidden; max-width: 160px; }
+  .rest-bar-fill { height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--warm));
+    transition: width 0.5s ease; }
+
+  /* NIGHT BAND */
+  .night-band { display: grid; grid-template-columns: 2rem 1fr;
+    gap: 0 0.7rem; align-items: center; margin-bottom: 0.4rem; }
+  .night-line { border-top: 1.5px dashed var(--night); }
+  .night-label {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    color: var(--night); background: var(--night-pale);
+    border-radius: 4px; padding: 0.12rem 0.4rem;
+    display: inline-block; margin-top: 0.3rem;
+  }
+
+  /* SUMMARY */
+  .summary {
+    background: linear-gradient(135deg, var(--warm), var(--accent));
+    color: white; border-radius: 14px; padding: 1.5rem 1.2rem;
+    margin-top: 1rem; text-align: center;
+    box-shadow: 0 8px 24px rgba(139,94,60,0.25);
+  }
+  .summary .emoji { font-size: 2.2rem; }
+  .summary h2 { font-family: 'Playfair Display', serif;
+    font-size: 1.1rem; margin-top: 0.3rem; margin-bottom: 0.2rem; }
+  .finish-time { font-family: 'DM Mono', monospace;
+    font-size: 1.6rem; font-weight: 500; letter-spacing: -0.02em; }
+  .duration { font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;
+    font-family: 'DM Mono', monospace; }
+
+  /* OFFLINE BADGE */
+  .offline-badge {
+    position: fixed; bottom: calc(var(--safe-bottom) + 0.5rem); right: 0.8rem;
+    background: var(--green); color: white;
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    padding: 0.3rem 0.7rem; border-radius: 20px;
+    display: none; z-index: 99;
+  }
+  .offline-badge.visible { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="loaf">🍞</span>
+    <h1>Sauerteig Zeitplaner</h1>
+    <p class="subtitle">Nacht-Fenster 22:00–08:00 · Flexibel · Offline</p>
+  </header>
+
+  <!-- SETTINGS -->
+  <div class="card">
+    <div class="card-title">⚙️ Einstellungen</div>
+
+    <div class="field">
+      <label>Startzeit</label>
+      <input type="datetime-local" id="startInput" value="2025-01-03T22:00">
+    </div>
+    <div class="field">
+      <label>Backfertig um (optional)</label>
+      <input type="datetime-local" id="endInput">
+    </div>
+    <div class="suggest-box" id="suggestBox"></div>
+
+    <div class="divider"></div>
+    <div class="card-title" style="margin-bottom:0.7rem">🕐 Flexible Ruhezeiten</div>
+
+    <div class="flex-row">
+      <div class="flex-group">
+        <label>Starter (Schritte 1&2)</label>
+        <div class="num-row">
+          <input type="number" id="sMin" value="6" min="1" max="24">
+          <span class="dash">–</span>
+          <input type="number" id="sMax" value="12" min="1" max="48">
+          <span class="unit">h</span>
+        </div>
+        <div class="num-row" style="margin-top:0.35rem">
+          <span class="unit">Standard:</span>
+          <input type="number" id="sDef" value="9" min="1" max="48">
+          <span class="unit">h</span>
+        </div>
+      </div>
+      <div class="flex-group">
+        <label>Gärkorb (Schritt 9)</label>
+        <div class="num-row">
+          <input type="number" id="gMin" value="8" min="1" max="48">
+          <span class="dash">–</span>
+          <input type="number" id="gMax" value="12" min="1" max="72">
+          <span class="unit">h</span>
+        </div>
+        <div class="num-row" style="margin-top:0.35rem">
+          <span class="unit">Standard:</span>
+          <input type="number" id="gDef" value="10" min="1" max="72">
+          <span class="unit">h</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="global-warn" id="globalWarn"></div>
+
+  <!-- TIMELINE -->
+  <div class="card">
+    <div class="card-title">📋 Rezeptschritte</div>
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <div class="summary" id="summary">
+    <div class="emoji">🎉</div>
+    <h2>Brot fertig um</h2>
+    <div class="finish-time" id="finishTime">–</div>
+    <div class="duration" id="totalDuration"></div>
+  </div>
+
+</div>
+
+<div class="offline-badge" id="offlineBadge">✓ Offline verfügbar</div>
+
+<script>
+// PWA: Service Worker registrieren
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => {
+        document.getElementById('offlineBadge').classList.add('visible');
+        setTimeout(() => document.getElementById('offlineBadge').classList.remove('visible'), 3000);
+      })
+      .catch(() => {});
+  });
+}
+
+const NS = 22/24, NE = 8/24;
+const STEPS = [
+  [1,  "Starter ansetzen (1. Mal)",   5,  'starter'],
+  [2,  "Starter ansetzen (2. Mal)",   5,  'starter'],
+  [3,  "Teig ansetzen",               15, 60],
+  [4,  "Salz hinzufügen",             5,  60],
+  [5,  "Dehnen & Falten (1/3)",       5,  30],
+  [6,  "Dehnen & Falten (2/3)",       5,  30],
+  [7,  "Dehnen & Falten (3/3)",       5,  60],
+  [8,  "Teig formen",                 5,  15],
+  [9,  "Teig in Gärkorb legen",       5,  'gaerkorb'],
+  [10, "Backen mit Deckel 🔥",        25, null],
+  [11, "Backen ohne Deckel 🎉",       25, null],
+];
+
+function dayFrac(ms) { return (ms % 86400000) / 86400000; }
+function isNight(ms) { const f = dayFrac(ms); return f >= NS || f < NE; }
+
+function fmt(ms) {
+  const d = new Date(ms);
+  const days = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+  return `${days[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}. ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function adjustFlex(endWork, def, min, max) {
+  let restH = def;
+  let next = endWork + restH * 3600000;
+  const f = dayFrac(next);
+  if (f >= NS || f < NE) {
+    const d = new Date(next);
+    d.setHours(8, 0, 0, 0);
+    if (dayFrac(next) >= NS) d.setDate(d.getDate() + 1);
+    const needed = (d.getTime() - endWork) / 3600000;
+    restH = Math.min(max, Math.max(min, needed));
+    next = endWork + restH * 3600000;
+  }
+  const outOfRange = restH > max + 0.01 || restH < min - 0.01;
+  const stillNight = isNight(next);
+  const status = outOfRange || stillNight ? (outOfRange ? 'err' : 'warn') : 'ok';
+  return { restH, next, status };
+}
+
+function g(id) { return +document.getElementById(id).value; }
+
+function compute(startMs) {
+  const s = { sMin:g('sMin'), sMax:g('sMax'), sDef:g('sDef'),
+              gMin:g('gMin'), gMax:g('gMax'), gDef:g('gDef') };
+  let cursor = startMs;
+  return STEPS.map(([id, name, work, rest]) => {
+    const start = cursor, endWork = cursor + work * 60000;
+    let restH = null, next = endWork, status = 'ok', isFlex = false;
+    let minH = 0, maxH = 0;
+
+    if (rest === 'starter') {
+      isFlex = true; minH = s.sMin; maxH = s.sMax;
+      const r = adjustFlex(endWork, s.sDef, s.sMin, s.sMax);
+      restH = r.restH; next = r.next; status = r.status;
+    } else if (rest === 'gaerkorb') {
+      isFlex = true; minH = s.gMin; maxH = s.gMax;
+      const r = adjustFlex(endWork, s.gDef, s.gMin, s.gMax);
+      restH = r.restH; next = r.next; status = r.status;
+    } else if (typeof rest === 'number') {
+      restH = rest / 60; next = endWork + rest * 60000;
+    }
+
+    if (isNight(start)) status = 'err';
+    cursor = next;
+    return { id, name, work, restH, isFlex, minH, maxH, start, endWork, next, status };
+  });
+}
+
+function render(results) {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  let hasErr = false, hasWarn = false;
+  let prevDay = null;
+
+  results.forEach((s, i) => {
+    const d = new Date(s.start);
+    const dayKey = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (prevDay && dayKey !== prevDay) {
+      const nb = document.createElement('div');
+      nb.className = 'night-band';
+      nb.innerHTML = `<div></div><div><hr class="night-line"><span class="night-label">🌙 Nächster Tag</span></div>`;
+      tl.appendChild(nb);
+    }
+    prevDay = dayKey;
+
+    if (s.status === 'err') hasErr = true;
+    if (s.status === 'warn') hasWarn = true;
+
+    const div = document.createElement('div');
+    div.className = 'step';
+    div.style.animationDelay = `${i * 35}ms`;
+
+    const badge = s.status === 'ok'
+      ? `<span class="badge ok">✅ OK</span>`
+      : s.status === 'warn'
+        ? `<span class="badge warn">⚠️ Anpassung</span>`
+        : `<span class="badge err">⛔ Nachts!</span>`;
+
+    let restHtml = '';
+    if (s.restH !== null) {
+      const rm = Math.round(s.restH * 60);
+      const rl = rm >= 60 ? `${s.restH.toFixed(1).replace('.',',')} h` : `${rm} min`;
+      const tc = s.isFlex ? 'tag flex' : 'tag rest';
+      restHtml = `<span class="${tc}">${rl} Ruhe${s.isFlex ? ' (flex)' : ''}</span>`;
+      if (s.isFlex && s.maxH > s.minH) {
+        const pct = Math.min(100, Math.max(0, ((s.restH - s.minH) / (s.maxH - s.minH)) * 100));
+        restHtml += `<div class="rest-bar"><div class="rest-bar-fill" style="width:${pct}%"></div></div>`;
+      }
+    }
+
+    div.innerHTML = `
+      <div class="step-connector">
+        <div class="step-dot">${s.id}</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-header">
+          <div class="step-name">${s.name}</div>
+          <div class="step-time">${fmt(s.start)}</div>
+        </div>
+        <div class="step-meta">
+          <span class="tag">⏱ ${s.work} min</span>
+          ${restHtml}
+          ${badge}
+        </div>
+      </div>`;
+    tl.appendChild(div);
+  });
+
+  const last = results[results.length - 1];
+  document.getElementById('finishTime').textContent = fmt(last.next);
+  const totalH = (last.next - results[0].start) / 3600000;
+  const days = Math.floor(totalH / 24);
+  const hrs = (totalH % 24).toFixed(1).replace('.',',');
+  document.getElementById('totalDuration').textContent =
+    `Gesamtdauer: ${days > 0 ? days + ' Tag' + (days > 1 ? 'e' : '') + ' und ' : ''}${hrs} Stunden`;
+
+  const w = document.getElementById('globalWarn');
+  if (hasErr) {
+    w.textContent = '⛔ Arbeitsschritt fällt ins Nacht-Fenster – bitte Startzeit anpassen!';
+    w.className = 'global-warn err';
+  } else if (hasWarn) {
+    w.textContent = '⚠️ Flexible Ruhezeit konnte Nacht-Fenster nicht vollständig vermeiden – früherer Start empfohlen.';
+    w.className = 'global-warn warn';
+  } else {
+    w.className = 'global-warn';
+  }
+}
+
+function calcSuggest(endMs) {
+  const s = { sMin:g('sMin'), sMax:g('sMax'), sDef:g('sDef'),
+              gMin:g('gMin'), gMax:g('gMax'), gDef:g('gDef') };
+  const total = (5+5+15+5+5+5+5+5+5+25+25) + (60+60+30+30+60+15) +
+                (s.sDef * 2 + s.gDef) * 60;
+  return endMs - total * 60000;
+}
+
+function update() {
+  const sv = document.getElementById('startInput').value;
+  const ev = document.getElementById('endInput').value;
+  const sb = document.getElementById('suggestBox');
+
+  if (ev) {
+    const sug = calcSuggest(new Date(ev).getTime());
+    sb.innerHTML = `💡 Empfohlene Startzeit: <strong>${fmt(sug)}</strong><br><span style="opacity:0.8">↑ Oben eintragen & Endzeit löschen</span>`;
+    sb.classList.add('visible');
+  } else {
+    sb.classList.remove('visible');
+  }
+
+  if (!sv) return;
+  render(compute(new Date(sv).getTime()));
+}
+
+['startInput','endInput','sMin','sMax','sDef','gMin','gMax','gDef']
+  .forEach(id => document.getElementById(id).addEventListener('input', update));
+
+update();
+</script>
+</body>
+</html>
